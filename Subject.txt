@@ -1,0 +1,10 @@
+1) What is Function Calling?
+    it is to transform a humman text to a function Call.(calling the right function & gave it the right args).
+
+2) Why is This Important? (the Function Call)
+    it hellp to use othere system to not do everything by your self just call an API, or ask for a query, and to provide structured output using JSON of XML
+
+3) The Challenge?
+        Constrained decoding.
+
+4)
