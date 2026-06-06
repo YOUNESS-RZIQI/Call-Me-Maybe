@@ -2,9 +2,9 @@
 
 2) flake8
 
-3)try-except
+3) try-except +  clear error messages to the user
 
-4)mypy
+4) mypy
 
 5) type hints : Variables, args & return values.
 
@@ -14,12 +14,20 @@
 
 8) Make file :
 
-    8-1) • install: using UV, install: flake8, uv(using pip ?), mypy, packeges.
+        Need to work using :      uv
+
+    8-1) • install: using UV?, install: uv, flake8, (mypy, pydantic using uv), numpy, Qwen/Qwen3-0.6B
+    
     8-2) • run    : Excute main code.
+        uv run python -m src [--functions_definition <function_definition_file>] [--input <input_file>] [--output <output_file>]
+    
     8-3) • debug  : Learn how to debug using gdb.
+    
     8-4) • clean  : rm -rf __pycache__, .mypy__cache 
+    
     8-5) • lint   : Execute the commands flake8 . and mypy . --warn-return-any
                  --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs
                  --check-untyped-defs
+    
     8-6) (Optional) • lint-strict (optional): Execute the commands flake8 . and mypy . --strict
 

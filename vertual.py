@@ -1,6 +1,6 @@
 1) we need the vertual invironment to solve the problem of dependencies coflect.
 
-2) to creat one  : python -m venv venv
+2) to creat one  : uv venv yo
 
 3) to activate   : source virtual_env/bin/activate
 

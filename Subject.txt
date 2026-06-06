@@ -7,4 +7,13 @@
 3) The Challenge?
         Constrained decoding.
 
-4)
+4) norm
+
+5) make file
+
+6) two folders : 
+
+    * data/input/ : contain two file , 1) function_calling_tests.json 2) functions_definition.json
+    *  data/output/
++
+7) 
