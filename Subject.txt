@@ -15,5 +15,7 @@
 
     * data/input/ : contain two file , 1) function_calling_tests.json 2) functions_definition.json
     *  data/output/
-+
-7) 
+
+7) the constrainde decoder check the JSON format and the Valide Schema.
+
+8) 
