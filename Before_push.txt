@@ -16,7 +16,7 @@
 
         Need to work using :      uv
 
-    8-1) • install: using UV?, install: uv, flake8, (mypy, pydantic using uv), numpy, Qwen/Qwen3-0.6B
+    8-1) • install: using UV, install: uv, flake8, (mypy, pydantic using uv), numpy, Qwen/Qwen3-0.6B, llm_sdk
     
     8-2) • run    : Excute main code.
         uv run python -m src [--functions_definition <function_definition_file>] [--input <input_file>] [--output <output_file>]
