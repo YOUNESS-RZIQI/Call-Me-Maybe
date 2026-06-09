@@ -19,3 +19,7 @@
 7) the constrainde decoder check the JSON format and the Valide Schema.
 
 8) 
+
+
+
+Parsing -> Pipeline (no constrainde decoding) -> Constrained decoding -> Machine State.
