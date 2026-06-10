@@ -2,7 +2,7 @@
 
 2) flake8
 
-3) try-except +  clear error messages to the user
+3) try-except +  clear error messages to the user, Gracefully handle malformed inputs, missing files, and edge cases
 
 4) mypy
 
