@@ -1,5 +1,5 @@
-from src.parser import Parser
-from src.builder import PromptBuilder
+string = "youness"
 
+string.append("hi")
 
-print(PromptBuilder.build_final_prompt_string("What is the sum of 2 and 3?", Parser.get_input_definitions_objects()))
+print(string)
