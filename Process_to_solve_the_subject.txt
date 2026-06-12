@@ -1,10 +1,9 @@
 # 1. Parse input files (stell need to make the path changable)
 # 2. Build internal representations (Pydantic models) (stell need to add the tool)
-
-
 # 3. Create prompt/context for the LLM
 
 # 4. Constrained decoding
 # 5. Machine state / JSON state tracking
+
 # 6. Validate output against schema
 # 7. Write output JSON file
