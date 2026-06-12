@@ -1,4 +1,4 @@
-from src.models import DefinitionValidator
+from models import DefinitionValidator
 from typing import List
 
 
@@ -14,5 +14,3 @@ class PromptBuilder:
             i += 1
         final_string += f" Request: ({prompts}), JSON:"
         return final_string
-
-        
