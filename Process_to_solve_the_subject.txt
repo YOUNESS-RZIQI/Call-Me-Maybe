@@ -11,14 +11,3 @@ how to install everything, and how to do that, and why.
 
 # 6. Validate output against schema
 # 7. Write output JSON file
-
-
-
-salam 
-
-salam 3alikom
-
-slam cv
-
-
-

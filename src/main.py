@@ -8,7 +8,7 @@ from llm_sdk import Small_LLM_Model
 import numpy as np
 
 
-def pipeline_process() -> None:
+def pipline_process() -> None:
     """ Main Pipline Process """
     try:
 
@@ -25,7 +25,7 @@ def pipeline_process() -> None:
             ids: List[int] = module.encode(result)
             for _ in range(50):
                 logits: Any = module.get_logits_from_input_ids(ids)
-                next_token_in: int = int(np.argmax(logits[0].tolist)) # is the logits are tensor.
+                next_token_in: int = int(np.argmax(logits[0].tolist())) # is the logits are tensor.
                 ids.append(next_token_in)
             result = module.decode(ids)
             print(result, "\n")
@@ -37,4 +37,5 @@ def pipeline_process() -> None:
         print("\nhi\n")
 
 
-pipeline_process()
+if __name__ == "__main__":
+    pipline_process()
