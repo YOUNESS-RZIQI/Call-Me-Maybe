@@ -1,4 +1,4 @@
-from models import DefinitionValidator
+from src.models import DefinitionValidator
 from typing import List
 
 

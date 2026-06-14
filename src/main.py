@@ -1,9 +1,13 @@
-from builder import PromptBuilder
-from parser import Parser
+from src.builder import PromptBuilder
+from src.parser import Parser
 import traceback
 import sys
 from typing import List, Any
-from models import DefinitionValidator
+from src.models import DefinitionValidator
+
+import os
+os.environ["HF_HOME"] = ".hf_cache"
+
 from llm_sdk import Small_LLM_Model
 import numpy as np
 
@@ -34,7 +38,6 @@ def pipline_process() -> None:
         sys.stderr.write("\033[91m")
         traceback.print_exc()
         sys.stdout.write("\033[0m")
-        print("\nhi\n")
 
 
 if __name__ == "__main__":

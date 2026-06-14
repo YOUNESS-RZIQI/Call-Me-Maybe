@@ -1,6 +1,6 @@
 from typing import List
 import json
-from models import PromptValidator, DefinitionValidator
+from src.models import PromptValidator, DefinitionValidator
 
 
 class Parser:
