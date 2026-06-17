@@ -1,0 +1,85 @@
+-------------------------------------------------------------------------------------------------------
+Yes, that is completely OK, and in fact it's the approach I would expect.
+
+The subject never says:
+
+> "The LLM must generate the entire output file."
+
+What it says is:
+
+> "For each prompt, add a JSON object to this file. Each object in the array must contain exactly the following keys:"
+>
+> • prompt
+>
+> • name
+>
+> • parameters
+
+And the example output is:
+
+```json
+[
+    {
+        "prompt": "What is the sum of 2 and 3?",
+        "name": "fn_add_numbers",
+        "parameters": {"a": 2.0, "b": 3.0}
+    },
+    {
+        "prompt": "Reverse the string 'hello'",
+        "name": "fn_reverse_string",
+        "parameters": {"s": "hello"}
+    }
+]
+```
+
+Notice that this is a **JSON array of objects**.
+
+The subject's goal is:
+
+> "translate natural language prompts into structured function calls"
+
+and
+
+> "Your implementation must use constrained decoding to guarantee 100% valid JSON output"
+
+This means the important part is that the LLM + constrained decoder correctly produces the structured function call.
+
+For example, for one prompt:
+
+```json
+{
+    "prompt": "What is the sum of 2 and 3?",
+    "name": "fn_add_numbers",
+    "parameters": {"a": 2.0, "b": 3.0}
+}
+```
+
+Then your Python code can do:
+
+```python
+results = []
+
+for prompt in prompts:
+    result = constrained_decode(prompt)
+    results.append(result)
+
+with open(output_file, "w") as file:
+    json.dump(results, file, indent=4)
+```
+
+This fully satisfies:
+
+> "For each prompt, add a JSON object to this file."
+
+The reviewer cares about:
+
+* correct function selection
+* correct arguments
+* valid JSON
+* schema compliance
+
+not whether the LLM itself generated the surrounding `[` `]` and commas for the final file.
+
+In fact, generating one function-call object per prompt and letting Python assemble the final JSON array is usually cleaner and easier to validate.
+
+--------------------------------------------------------------------------------------------------

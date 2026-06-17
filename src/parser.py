@@ -13,11 +13,11 @@ class Parser:
                 data = json.load(file)
                 prompts_list = []
                 for item in data:
-                    validated_prompt = PromptValidator(**item) 
+                    validated_prompt = PromptValidator(**item)
                     prompts_list.append(validated_prompt.prompt)
                 return prompts_list
         except Exception as e:
-            
+
             raise ValueError("Error in file: src/parser.py, in get_input_prompts_as_list_of_strs method.") from None
 
     @staticmethod
@@ -33,6 +33,3 @@ class Parser:
                 return definitions_list
         except Exception as e:
             raise ValueError("Error in file: src/parser.py, in get_input_definitions_objects method.") from None
-
-
-

@@ -5,7 +5,6 @@ import sys
 from typing import List
 from src.models import DefinitionValidator
 from src.decoding import constrain_decoding
-import os
 
 
 def pipline_process() -> None:
@@ -35,5 +34,4 @@ def pipline_process() -> None:
 
 
 if __name__ == "__main__":
-    os.environ["HF_HOME"] = ".hf_cache"
     pipline_process()

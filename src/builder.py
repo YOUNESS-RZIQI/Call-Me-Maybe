@@ -12,5 +12,6 @@ class PromptBuilder:
         for function in definitions_list:
             final_string += f"Function {i}: {function.name}({', '.join([f'{key}: {value.type}' for key, value in function.parameters.items()])})"
             i += 1
-        final_string += f' Request: ({prompts}), ' + 'expected JSON schema: {\n"prompt": "...",\n"name": "...",\n"parameters": {"argment1": value1, ...}\n}, JSON: '
+        final_string += f' Request: ({prompts}), ' + \
+            'expected JSON schema: {\n"prompt": "...",\n"name": "...",\n"parameters": {"argment1": value1, ...}\n}, JSON: '
         return final_string
