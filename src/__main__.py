@@ -2,7 +2,7 @@ from src.builder import PromptBuilder
 from src.parser import Parser
 import traceback
 import sys
-from typing import List
+from typing import List, Dict
 from src.models import DefinitionValidator
 from src.decoding import constrain_decoding
 
@@ -15,14 +15,18 @@ def pipline_process() -> None:
         functions_def: List[
             DefinitionValidator] = Parser.get_input_definitions_objects()
 
-        llm_prompts: List[str] = []
+        final_llm_prompts: List[str] = []
         for prompt in input_prompts:
-            llm_prompts.append(
+            final_llm_prompts.append(
                 PromptBuilder.build_final_prompt_string(prompt, functions_def))
 
-        cd_outputs: List[str] = []
-        for llm_prompt in llm_prompts:
-            cd_outputs.append(constrain_decoding(llm_prompt))
+        cd_strs: List[str] = []
+        input_prompt_index: int = 0
+
+        for llm_prompt in final_llm_prompts:
+            cd_strs.append(constrain_decoding(llm_prompt,
+                                              input_prompts[input_prompt_index]))
+            input_prompt_index += 1
 
         #check output is valid
         # write into data/outputs file.

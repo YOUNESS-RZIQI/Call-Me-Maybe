@@ -13,5 +13,5 @@ class PromptBuilder:
             final_string += f"Function {i}: {function.name}({', '.join([f'{key}: {value.type}' for key, value in function.parameters.items()])})"
             i += 1
         final_string += f' Request: ({prompt}), ' + \
-            'Result:\n{\n"prompt": "' + f'{prompt}",\n"name": "'
+            'Result is Function Number: '
         return final_string
