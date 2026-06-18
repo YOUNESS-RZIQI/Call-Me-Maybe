@@ -22,8 +22,11 @@ def constrain_decoding(llm_prompt: str, input_prompt: str, functions_def_list: L
             if not (model.decode(next_token_id).isdigit()):
                 break
             function_number += model.decode(next_token_id)
-
-        dict_result += functions_def_list[int(function_number)]
+        #check that the number nout out side of the list " unknown function name"
+        if int(function_number) >= len(functions_def_list):
+            dict_result += " unknown function call"
+        else:
+            dict_result += functions_def_list[int(function_number)]
         dict_result += '",\n"parameters": {"a": '
 
         print(dict_result, "\n\n")
