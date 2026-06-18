@@ -16,8 +16,7 @@ class Parser:
                     validated_prompt = PromptValidator(**item)
                     prompts_list.append(validated_prompt.prompt)
                 return prompts_list
-        except Exception as e:
-
+        except Exception:
             raise ValueError("Error in file: src/parser.py, in get_input_prompts_as_list_of_strs method.") from None
 
     @staticmethod
@@ -31,5 +30,5 @@ class Parser:
                     validated_deffinition = DefinitionValidator(**item)
                     definitions_list.append(validated_deffinition)
                 return definitions_list
-        except Exception as e:
+        except Exception:
             raise ValueError("Error in file: src/parser.py, in get_input_definitions_objects method.") from None
