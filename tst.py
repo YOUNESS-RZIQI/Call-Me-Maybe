@@ -1,2 +1,4 @@
-prompt = "What is the sum of 2 and 3?"
-print('Result:\n{\n"prompt": "' + f'{prompt}",\n"name": "')
+word = "{'a': TypeDefinition(type='number'), 'b': TypeDefinition(type='number')}"
+splited = word.split(":")
+
+print((splited))
