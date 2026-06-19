@@ -8,17 +8,7 @@
 "prompt": "What is the sum of 2 and 3?",
 "name": "fn_add_numbers",
 "parameters": {"a": 2.0, "b": 3.0}
-}
-
-i = 0
-fn_add_numbers [41,55,99]
-fn_greet [41,10]
-fn_reverse_string [41,78,1000]
-fn_get_square_root 
-fn_substitute_string_with_regex [41,454,1212,7478,7814]
-
-
-,
+},
 {
 "prompt": "Reverse the string 'hello'",
 "name": "fn_reverse_string",
