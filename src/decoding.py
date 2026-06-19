@@ -45,10 +45,7 @@ def constrain_decoding(llm_prompt: str, input_prompt: str) -> str:
             function_number += model.decode(next_token_id)
 
         dict_result += functions_def_list[int(function_number)]
-        dict_result += '",\n"parameters": {"a": '
-
-
-        print(functions_def_obj[int(function_number)].parameters["a"].type)
+        dict_result += '",\n"parameters": '
 
         return ""
     except Exception:
