@@ -28,8 +28,19 @@ def pipline_process() -> None:
                                               input_prompts[input_prompt_index]))
             input_prompt_index += 1
 
-        # check output is valid
-        # write into data/outputs file.
+        import json
+        import os
+        
+        output_data = []
+        for s in cd_strs:
+            try:
+                output_data.append(json.loads(s))
+            except json.JSONDecodeError:
+                pass
+
+        os.makedirs("data/output", exist_ok=True)
+        with open("data/output/output.json", "w") as f:
+            json.dump(output_data, f, indent=4)
 
     except Exception:
         sys.stderr.write("\033[91m")

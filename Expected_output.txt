@@ -1,9 +1,4 @@
 [
-
-
-
-
-    
 {
 "prompt": "What is the sum of 2 and 3?",
 "name": "fn_add_numbers",
@@ -15,5 +10,9 @@
 "parameters": {"s": "hello"}
 }
 ]
+
+
 "parameters": {"a": 2.0, "b": 3.0}
 "parameters": {'a': TypeDefinition(type='number'), 'b': TypeDefinition(type='number')}
+
+{\n"prompt": "What is the sum of 2 and 3?",\n"name": "fn_add_numbers",\n"parameters": {"a": 2.0, "b": 3.0}\n}
