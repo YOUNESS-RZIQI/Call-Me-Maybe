@@ -40,66 +40,38 @@ def constrain_decoding(llm_prompt: str, input_prompt: str) -> str:
                     logits[index] = float("-inf")
 
             next_token_id = int(np.argmax(logits))
-            if not (model.decode(next_token_id).isdigit()):
+            if not (model.decode([next_token_id]).isdigit()):
                 break
             function_number += model.decode(next_token_id)
 
         dict_result += functions_def_list[int(function_number)]
-        dict_result += '",\n"parameters": {'
+        dict_result += '",\n"parameters": '
 
-        llm_context = llm_prompt + function_number + '",\n"parameters": {'
-        
-        parameters_dict = functions_def_obj[int(function_number)].parameters
-        keys = list(parameters_dict.keys())
-        
-        for i, key in enumerate(keys):
-            param_type = parameters_dict[key].type
-            
-            key_str = f'"{key}": '
-            if param_type == 'string':
-                key_str += '"'
-            
-            dict_result += key_str
-            llm_context += key_str
-            
-            value_str = ""
-            while True:
-                logits: List[float] = model.get_logits_from_input_ids(
-                    model.encode(llm_context + value_str)[0].tolist())
-                
-                if param_type == 'number':
-                    for index in range(len(logits)):
-                        if index not in allowed_tokens_ids:
-                            logits[index] = float("-inf")
-                            
-                next_token_id = int(np.argmax(logits))
-                decoded_char = model.decode(next_token_id)
-                
-                if param_type == 'number':
-                    if not (decoded_char.isdigit() or decoded_char == '.'):
-                        break
-                    value_str += decoded_char
-                elif param_type == 'string':
-                    if '"' in decoded_char:
-                        quote_index = decoded_char.find('"')
-                        if quote_index != -1:
-                            value_str += decoded_char[:quote_index]
-                            break
-                    value_str += decoded_char
+        # chosen_func_obj: DefinitionValidator = None
+        # for func in functions_def_obj:
+        #     if func.name == functions_def_list[int(function_number)]:
+        #         chosen_func_obj = func
+        #         break
 
-            if param_type == 'string':
-                dict_result += value_str + '"'
-                llm_context += value_str + '"'
-            else:
-                dict_result += value_str
-                llm_context += value_str
+        args_llm_prompt: str = 'Example of Expected result: Example start afters colon:{\n"prompt": "What is the sum of 2 and 3?",\n"name": "fn_add_numbers",\n"parameters": {"a": 2, "b": 3}End of Example. Complet my solution which will start after colon :'
 
-            if i < len(keys) - 1:
-                dict_result += ", "
-                llm_context += ", "
+        while (1):
+            logits: List[float] = model.get_logits_from_input_ids(
+                model.encode(args_llm_prompt + dict_result)[0].tolist())
+            next_token_id = int(np.argmax(logits))
+
+            if "}" in model.decode([next_token_id]):
+                dict_result += model.decode([next_token_id])
+                break
+            dict_result += model.decode([next_token_id])
         
-        dict_result += "}\n}"
-        
+        print(dict_result, "")
+        # print(functions_def_obj[int(function_number)].parameters[0].type)
+        # print(llm_prompt, "\n\n")
+        # print(function_number, "\n\n")
+        # print(functions_def_list[int(function_number)], "\n\n")
+        # print(functions_def_list, "\n\n")
+        # print(dict_result)
         return dict_result
     except Exception:
         sys.stderr.write("\033[91m")
