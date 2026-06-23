@@ -5,6 +5,8 @@ import sys
 from typing import List
 from src.models import DefinitionValidator
 from src.decoding import constrain_decoding
+import json
+import os
 
 
 def pipline_process() -> None:
@@ -28,9 +30,6 @@ def pipline_process() -> None:
                                               input_prompts[input_prompt_index]))
             input_prompt_index += 1
 
-        import json
-        import os
-        
         output_data = []
         for s in cd_strs:
             try:

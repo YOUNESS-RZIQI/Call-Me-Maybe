@@ -220,12 +220,7 @@ def constrain_decoding(llm_prompt: str, input_prompt: str) -> str:
 
         dict_result += "\n}"
 
-        # print(functions_def_obj[int(function_number)].parameters[0].type)
-        # print(llm_prompt, "\n\n")
-        # print(function_number, "\n\n")
-        # print(functions_def_list[int(function_number)], "\n\n")
         print(dict_result, "\n\n")
-        # print(dict_result.split("parameters"), "\n\n")
         return dict_result
     except Exception:
         sys.stderr.write("\033[91m")
