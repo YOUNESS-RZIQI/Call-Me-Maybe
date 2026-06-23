@@ -8,8 +8,12 @@ from src.models import DefinitionValidator
 from src.parser import Parser
 
 
-def args_decoding(vc: dict, llm_prompt: str, dict_result: str, key_index: int, keys: List[str], ky_type: List[str]) -> tuple:
-    model: Small_LLM_Model = Small_LLM_Model()
+model: Small_LLM_Model = Small_LLM_Model()
+
+
+def args_decoding(vc: dict, llm_prompt: str, dict_result: str, key_index: int,
+                  keys: List[str], ky_type: List[str]) -> tuple:
+    """ Decodes arguments for a specific function call """
 
     dict_result += '"' + keys[key_index] + '": '
     llm_prompt += '"' + keys[key_index] + '": '
@@ -54,8 +58,21 @@ def args_decoding(vc: dict, llm_prompt: str, dict_result: str, key_index: int, k
         # Decode the token into a string variable to avoid multiple decode calls
         decoded_token = model.decode([next_token_id])
 
-        # We stop generating this argument when the model generates a comma
-        if "," in decoded_token:
+        if ky_type[key_index] in ("string", "s", "str") and '"' in decoded_token:
+            # The model finished the string by generating a closing quote.
+            # Since this is an intermediate argument, we MUST end with a comma.
+            token_to_add = decoded_token.replace("}", "")
+            if "," not in token_to_add:
+                token_to_add += ", "
+            elif ", " not in token_to_add:
+                token_to_add = token_to_add.replace(",", ", ")
+            dict_result += token_to_add
+            llm_prompt += token_to_add
+            break
+
+        if ky_type[key_index] not in ("string", "s", "str") and "," in decoded_token:
+            # For numbers/bools, we stop when it generates a comma.
+            decoded_token = decoded_token.replace(",", ", ")
             dict_result += decoded_token
             llm_prompt += decoded_token
             break
@@ -68,7 +85,7 @@ def args_decoding(vc: dict, llm_prompt: str, dict_result: str, key_index: int, k
 def constrain_decoding(llm_prompt: str, input_prompt: str) -> str:
     """ Constrained Decoding for JSON """
     try:
-        model: Small_LLM_Model = Small_LLM_Model()
+
         dict_result: str = '{\n"prompt": "' + f'{input_prompt}",\n"name": "'
         function_number: str = ""
         vocab_path = model.get_path_to_vocab_file()
@@ -177,34 +194,40 @@ def constrain_decoding(llm_prompt: str, input_prompt: str) -> str:
             # Decode the token into a string variable
             decoded_token = model.decode([next_token_id])
 
-            # Since this is the final argument, we wait for the model to naturally
-            # generate the closing brace '}'. We don't break early for strings or bools.
-            if "}" in decoded_token:
-                dict_result += decoded_token
-                llm_prompt += decoded_token
+            if ky_type[last_key_index] in ("string", "s", "str") and '"' in decoded_token:
+                # The model finished the final string. We MUST end with a closing brace.
+                token_to_add = decoded_token.replace(",", "")
+                if "}" not in token_to_add:
+                    token_to_add += "}"
+                dict_result += token_to_add
+                llm_prompt += token_to_add
                 break
 
-            if "," in decoded_token and ky_type[last_key_index] not in ("string", "s", "str"):
-                # If the model generated a comma instead of a brace (common for numbers/bools)
-                # we replace it with a brace because it's the final argument!
-                dict_result += decoded_token.replace(",", "}")
-                llm_prompt += decoded_token.replace(",", "}")
-                break
+            if ky_type[last_key_index] not in ("string", "s", "str"):
+                if "}" in decoded_token:
+                    dict_result += decoded_token
+                    llm_prompt += decoded_token
+                    break
+                if "," in decoded_token:
+                    # If the model generated a comma instead of a brace (common for numbers/bools)
+                    # we replace it with a brace because it's the final argument!
+                    dict_result += decoded_token.replace(",", "}")
+                    llm_prompt += decoded_token.replace(",", "}")
+                    break
 
             dict_result += decoded_token
             llm_prompt += decoded_token
+
+        dict_result += "\n}"
 
         # print(functions_def_obj[int(function_number)].parameters[0].type)
         # print(llm_prompt, "\n\n")
         # print(function_number, "\n\n")
         # print(functions_def_list[int(function_number)], "\n\n")
-        # print(dict_result, "\n\n")
-        print(dict_result.split("parameters"), "\n\n")
+        print(dict_result, "\n\n")
+        # print(dict_result.split("parameters"), "\n\n")
         return dict_result
     except Exception:
         sys.stderr.write("\033[91m")
         traceback.print_exc()
         sys.stdout.write("\033[0m")
-
-#"parameters": { "source_string": "Hello 34 I'm 233 years old","regex": "\d+","replacement": "NUMBERS" }
-#"parameters": { "source_string": "Programming is fun","regex": "[aeiouAEIOU]","replacement": "asterisk" }

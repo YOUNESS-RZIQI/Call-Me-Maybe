@@ -39,7 +39,7 @@ def pipline_process() -> None:
                 pass
 
         os.makedirs("data/output", exist_ok=True)
-        with open("data/output/output.json", "w") as f:
+        with open("data/output/function_calls.json", "w") as f:
             json.dump(output_data, f, indent=4)
 
     except Exception:
