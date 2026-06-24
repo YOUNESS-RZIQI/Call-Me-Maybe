@@ -11,9 +11,7 @@ from src.parser import Parser
 model: Small_LLM_Model = Small_LLM_Model()
 
 
-def args_decoding(vc: dict, llm_prompt: str, dict_result: str, key_index: int,
-                  keys: List[str], ky_type: List[str]) -> tuple:
-    """ Decodes arguments for a specific function call """
+def args_decoding(vc: dict, llm_prompt: str, dict_result: str, key_index: int, keys: List[str], ky_type: List[str]) -> tuple:
 
     dict_result += '"' + keys[key_index] + '": '
     llm_prompt += '"' + keys[key_index] + '": '
@@ -36,10 +34,14 @@ def args_decoding(vc: dict, llm_prompt: str, dict_result: str, key_index: int,
                               vc[","]}
 
     elif ky_type[key_index] in ("string", "s", "str"):
-        # We manually add the opening quote for string types.
+        # FIX: We manually add the opening quote for string types.
+        # This prevents the LLM from hallucinating numbers (like '1') because it
+        # forces the LLM to realize it is inside a string value.
         dict_result += '"'
         llm_prompt += '"'
         allowed_tokens_ids = set(range(len(vc)))
+
+    # '",\n"parameters": { "a": '
 
     while (1):
         logits: List[float] = model.get_logits_from_input_ids(
@@ -49,13 +51,16 @@ def args_decoding(vc: dict, llm_prompt: str, dict_result: str, key_index: int,
             if index not in allowed_tokens_ids:
                 logits[index] = float("-inf")
 
-        next_token_id: int = int(np.argmax(logits))
-        decoded_token: str = model.decode([next_token_id])
+        next_token_id = int(np.argmax(logits))
 
-        if ky_type[key_index] in ("string", "s", "str") and '"' in decoded_token:
+        # Decode the token into a string variable to avoid multiple decode calls
+        decoded_token = model.decode([next_token_id])
+
+        if ky_type[key_index] in ("string", "s", "str") and \
+           '"' in decoded_token and '\\' not in decoded_token:
             # The model finished the string by generating a closing quote.
             # Since this is an intermediate argument, we MUST end with a comma.
-            token_to_add: str = decoded_token.replace("}", "")
+            token_to_add = decoded_token.replace("}", "")
             if "," not in token_to_add:
                 token_to_add += ", "
             elif ", " not in token_to_add:
@@ -79,15 +84,18 @@ def args_decoding(vc: dict, llm_prompt: str, dict_result: str, key_index: int,
 def constrain_decoding(llm_prompt: str, input_prompt: str) -> str:
     """ Constrained Decoding for JSON """
     try:
-
-        dict_result: str = '{\n"prompt": "' + f'{input_prompt}",\n"name": "'
+        # Use json.dumps to properly escape the prompt string.
+        # Without this, prompts containing double quotes (e.g. "Hello 34") break
+        # the JSON structure, causing json.loads() to fail and silently drop the entry.
+        escaped_prompt: str = json.dumps(input_prompt)
+        dict_result: str = '{\n"prompt": ' + escaped_prompt + ',\n"name": "'
         function_number: str = ""
         vocab_path = model.get_path_to_vocab_file()
         with open(vocab_path, "r") as f:
             vc = json.load(f)
 
-        # only allowed tokens to generate the function number
-        allowed_tokens_ids: Set[int] = {
+        # allowed tokens: 0 1 2 3 4 5 6 7 8 9 . ,
+        allowed_tokens_ids = {
             vc["0"], vc["1"], vc["2"], vc["3"], vc["4"], vc["5"],
             vc["6"], vc["7"], vc["8"], vc["9"], vc["."], vc[","],
             vc["-"], vc["+"]
@@ -100,23 +108,31 @@ def constrain_decoding(llm_prompt: str, input_prompt: str) -> str:
         for obj in functions_def_obj:
             functions_def_list.append(obj.name)
 
-        # generate the function number
+        # The max number of digits needed to represent the largest valid index.
+        # e.g. 6 functions -> max index is 5 -> only 1 digit needed.
+        # This prevents an infinite loop where the LLM keeps generating digits.
+        max_digits: int = len(str(len(functions_def_list) - 1))
+
         while (1):
             logits: List[float] = model.get_logits_from_input_ids(
                 model.encode(llm_prompt + function_number)[0].tolist())
-
-            # masking the logits to only allow Expected tokens
+            # masking the logits to only allow digits from 0-9 and comma and dot.
             for index in range(0, len(logits)):
                 if index not in allowed_tokens_ids:
                     logits[index] = float("-inf")
 
-            next_token_id: int = int(np.argmax(logits))
+            next_token_id = int(np.argmax(logits))
             if not (model.decode([next_token_id]).isdigit()):
                 break
             function_number += model.decode(next_token_id)
 
+            # Safety guard: stop collecting digits once we have enough to
+            # represent any valid function index. Prevents infinite loops.
+            if len(function_number) >= max_digits:
+                break
+
         dict_result += functions_def_list[int(function_number)]
-        dict_result += '",\n"parameters": { '
+        dict_result += '",\n"parameters": {'
 
         chosen_func_obj: DefinitionValidator = None
         for func in functions_def_obj:
@@ -134,7 +150,7 @@ def constrain_decoding(llm_prompt: str, input_prompt: str) -> str:
 
         llm_prompt += dict_result
 
-        # do intermediate arguments (except the last one)
+        # i will do all the args until the last one and i will stop, and also i stop at comma ','
         for key_index in range(0, len(keys) - 1):
             llm_prompt, dict_result = args_decoding(vc,
                                                     llm_prompt,
@@ -149,29 +165,33 @@ def constrain_decoding(llm_prompt: str, input_prompt: str) -> str:
         dict_result += '"' + keys[last_key_index] + '": '
         llm_prompt += '"' + keys[last_key_index] + '": '
 
-        if ky_type[last_key_index] in ("number", "decimal",
-                                       "float", "num", "n"):
-
-            allowed_tokens_ids: Set[int] = {
+        if ky_type[last_key_index] in ("number", "decimal", "float", "num", "n"):
+            # We add back vc[","] so the model doesn't infinite loop if it strongly prefers a comma
+            # to end the number. We will catch the comma and replace it with '}'.
+            allowed_tokens_ids = {
                 vc["0"], vc["1"], vc["2"], vc["3"], vc["4"], vc["5"],
                 vc["6"], vc["7"], vc["8"], vc["9"], vc["."], vc["}"],
                 vc["-"], vc["+"], vc[","]}
 
         if ky_type[last_key_index] in ("int", "integer"):
-            allowed_tokens_ids: Set[int] = {
+            allowed_tokens_ids = {
                 vc["0"], vc["1"], vc["2"], vc["3"], vc["4"], vc["5"],
                 vc["6"], vc["7"], vc["8"], vc["9"], vc["}"],
                 vc["-"], vc["+"], vc[","]}
 
         if ky_type[last_key_index] in ("bool", "boolean"):
-            allowed_tokens_ids: Set[int] = {vc["true"], vc["True"], vc["TRUE"],
-                                            vc["false"], vc["False"],
-                                            vc["FALSE"], vc["}"], vc[","]}
+            allowed_tokens_ids = {vc["true"], vc["True"], vc["TRUE"],
+                                  vc["false"], vc["False"], vc["FALSE"],
+                                  vc["}"], vc[","]}
 
         if ky_type[last_key_index] in ("string", "s", "str"):
+            # FIX: We manually add the opening quote for string types.
+            # This forces the LLM to generate the text content instead of a random number.
             dict_result += '"'
             llm_prompt += '"'
             allowed_tokens_ids = set(range(len(vc)))
+
+        # '",\n"parameters": { "a": '
 
         while (1):
             logits: List[float] = model.get_logits_from_input_ids(
@@ -181,17 +201,15 @@ def constrain_decoding(llm_prompt: str, input_prompt: str) -> str:
                 if index not in allowed_tokens_ids:
                     logits[index] = float("-inf")
 
-            next_token_id: int = int(np.argmax(logits))
+            next_token_id = int(np.argmax(logits))
 
-            decoded_token: str = model.decode([next_token_id])
+            # Decode the token into a string variable
+            decoded_token = model.decode([next_token_id])
 
-            if ky_type[last_key_index] in (
-                    "string", "s", "str") and '"' in decoded_token:
-
-                tmp: Any[str, List[str]] = decoded_token.replace(",", "")
-                tmp = tmp.split('"')
-                token_to_add: str = tmp[0] + '"'
-
+            if ky_type[last_key_index] in ("string", "s", "str") and\
+               '"' in decoded_token and '\\' not in decoded_token:
+                # The model finished the final string. We MUST end with a closing brace.
+                token_to_add = decoded_token.replace(",", "")
                 if "}" not in token_to_add:
                     token_to_add += "}"
                 dict_result += token_to_add
@@ -204,6 +222,8 @@ def constrain_decoding(llm_prompt: str, input_prompt: str) -> str:
                     llm_prompt += decoded_token
                     break
                 if "," in decoded_token:
+                    # If the model generated a comma instead of a brace (common for numbers/bools)
+                    # we replace it with a brace because it's the final argument!
                     dict_result += decoded_token.replace(",", "}")
                     llm_prompt += decoded_token.replace(",", "}")
                     break
@@ -212,8 +232,12 @@ def constrain_decoding(llm_prompt: str, input_prompt: str) -> str:
             llm_prompt += decoded_token
 
         dict_result += "\n}"
-
+        # print(functions_def_obj[int(function_number)].parameters[0].type)
+        # print(llm_prompt, "\n\n")
+        # print(function_number, "\n\n")
+        # print(functions_def_list[int(function_number)], "\n\n")
         print(dict_result, "\n\n")
+        # print(dict_result.split("parameters"), "\n\n")
         return dict_result
     except Exception:
         sys.stderr.write("\033[91m")

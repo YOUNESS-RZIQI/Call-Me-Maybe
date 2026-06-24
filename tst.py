@@ -1,4 +1,2 @@
-word = "{'a': TypeDefinition(type='number'), 'b': TypeDefinition(type='number')}"
-splited = word.split(":")
-
-print((splited))
+string = "Hello \"Y\""
+print(f'"hi there, {string}"')

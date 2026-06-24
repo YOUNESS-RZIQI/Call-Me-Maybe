@@ -10,7 +10,7 @@ class PromptBuilder:
         final_string = ""
         i = 0
         for function in definitions_list:
-            final_string += f"Function {i}: {function.name}({', '.join([f'{key}: {value.type}, his Descreption: {function.description}' for key, value in function.parameters.items()])})"
+            final_string += f"Function {i}: {function.name}({', '.join([f'{key}: {value.type}), Function {i} Descreption: {function.description}' for key, value in function.parameters.items()])}"
             i += 1
         final_string += f' Request: ({prompt}), ' + \
             'Result is Function Number: '

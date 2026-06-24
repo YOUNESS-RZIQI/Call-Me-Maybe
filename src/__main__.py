@@ -31,11 +31,31 @@ def pipline_process() -> None:
             input_prompt_index += 1
 
         output_data = []
-        for s in cd_strs:
+        for i, s in enumerate(cd_strs):
             try:
-                output_data.append(json.loads(s))
-            except json.JSONDecodeError:
-                pass
+                parsed = json.loads(s)
+
+                # FIX 1: Restore original prompt verbatim (preserves double quotes
+                # and other special chars that the LLM may have changed).
+                parsed["prompt"] = input_prompts[i]
+
+                # FIX 2: Convert parameters of type "number" to float.
+                # The LLM generates whole numbers (e.g. 265) but the schema
+                # expects floats (e.g. 265.0) for the "number" type.
+                func_name = parsed.get("name")
+                for func_def in functions_def_obj:
+                    if func_def.name == func_name:
+                        for param_name, param_def in func_def.parameters.items():
+                            if param_def.type in ("number", "decimal",
+                                                  "float", "num", "n"):
+                                if param_name in parsed.get("parameters", {}):
+                                    parsed["parameters"][param_name] = float(
+                                        parsed["parameters"][param_name])
+                        break
+
+                output_data.append(parsed)
+            except json.JSONDecodeError as e:
+                print("Error: ", e, " | Input: \n", s, "\n")
 
         os.makedirs("data/output", exist_ok=True)
         with open("data/output/function_calls.json", "w") as f:
