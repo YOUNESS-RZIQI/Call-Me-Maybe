@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List, Set, Any
+from typing import List, Set
 import sys
 import traceback
 import json
@@ -8,13 +8,14 @@ from src.parser import Parser
 from llm_sdk import Small_LLM_Model
 
 
-
 def args_decoding(model: Small_LLM_Model, vc: dict, llm_prompt: str,
                   dict_result: str, key_index: int,
                   keys: List[str], ky_type: List[str]) -> tuple:
 
     dict_result += '"' + keys[key_index] + '": '
     llm_prompt += '"' + keys[key_index] + '": '
+
+    print(dict_result)
 
     if ky_type[key_index] in ("number", "decimal", "float", "num", "n"):
         allowed_tokens_ids: Set[int] = {
@@ -41,6 +42,8 @@ def args_decoding(model: Small_LLM_Model, vc: dict, llm_prompt: str,
         dict_result += '"'
         llm_prompt += '"'
         allowed_tokens_ids = set(range(len(vc)))
+
+        print(dict_result)
 
     # '",\n"parameters": { "a": '
 
@@ -69,6 +72,7 @@ def args_decoding(model: Small_LLM_Model, vc: dict, llm_prompt: str,
                 token_to_add = token_to_add.replace(",", ", ")
             dict_result += token_to_add
             llm_prompt += token_to_add
+            print(dict_result)
             break
 
         if ky_type[key_index] not in ("string", "s", "str") and \
@@ -77,14 +81,18 @@ def args_decoding(model: Small_LLM_Model, vc: dict, llm_prompt: str,
             decoded_token = decoded_token.replace(",", ", ")
             dict_result += decoded_token
             llm_prompt += decoded_token
+            print(dict_result)
             break
 
         dict_result += decoded_token
         llm_prompt += decoded_token
+        print(dict_result)
     return (llm_prompt, dict_result)
 
 
-def constrain_decoding(model: Small_LLM_Model, llm_prompt: str, input_prompt: str) -> str:
+def constrain_decoding(model: Small_LLM_Model,
+                       llm_prompt: str, input_prompt: str
+                       ) -> dict:
     """ Constrained Decoding for JSON """
     try:
 
@@ -93,13 +101,20 @@ def constrain_decoding(model: Small_LLM_Model, llm_prompt: str, input_prompt: st
         # break
         # the JSON structure, causing json.loads() to fail and silently drop
         # the entry.
-        escaped_prompt: str = json.dumps(input_prompt)
-        dict_result: str = '{\n"prompt": ' + escaped_prompt + ',\n"name": "'
+
+        prompt_with_back_slash: str = json.dumps(input_prompt)
+
+        dict_result: str = '{\n"prompt": ' + \
+            prompt_with_back_slash + ',\n"name": "'
+
+        print(dict_result)
+
         function_number: str = ""
+
         vocab_path = model.get_path_to_vocab_file()
+
         with open(vocab_path, "r") as f:
             vc = json.load(f)
-
         # allowed tokens: 0 1 2 3 4 5 6 7 8 9 . ,
         allowed_tokens_ids: Set[int] = {
             vc["0"], vc["1"], vc["2"], vc["3"], vc["4"], vc["5"],
@@ -135,7 +150,12 @@ def constrain_decoding(model: Small_LLM_Model, llm_prompt: str, input_prompt: st
                 break
 
         dict_result += functions_def_list[int(function_number)]
+
+        print(dict_result)
+
         dict_result += '",\n"parameters": {'
+
+        print(dict_result)
 
         chosen_func_obj: DefinitionValidator = None
         for func in functions_def_obj:
@@ -169,6 +189,8 @@ def constrain_decoding(model: Small_LLM_Model, llm_prompt: str, input_prompt: st
         dict_result += '"' + keys[last_key_index] + '": '
         llm_prompt += '"' + keys[last_key_index] + '": '
 
+        print(dict_result)
+
         if ky_type[last_key_index] in \
                 ("number", "decimal", "float", "num", "n"):
             allowed_tokens_ids: Set[int] = {
@@ -193,6 +215,8 @@ def constrain_decoding(model: Small_LLM_Model, llm_prompt: str, input_prompt: st
             dict_result += '"'
             llm_prompt += '"'
             allowed_tokens_ids: Set[int] = set(range(len(vc)))
+
+        print(dict_result)
 
         while (1):
             logits: List[float] = model.get_logits_from_input_ids(
@@ -229,22 +253,26 @@ def constrain_decoding(model: Small_LLM_Model, llm_prompt: str, input_prompt: st
 
             dict_result += decoded_token
             llm_prompt += decoded_token
+            print(dict_result)
 
         dict_result += "\n}"
 
         # convert string to dict
-        cd_dict = json.loads(dict_result)
+        try:
+            cd_dict = json.loads(dict_result)
 
-        # Convert number type args to float type
-        for arg in cd_dict["parameters"]:
-            arg_type: str = functions_def_obj[
-                int(function_number)].parameters[arg].type
-            if arg_type in ("number", "decimal", "float", "num", "n"):
-                if not isinstance(cd_dict["parameters"][arg], float):
-                    cd_dict["parameters"][arg] = float(cd_dict["parameters"][arg])
-
+            # Convert number type args to float type
+            for arg in cd_dict["parameters"]:
+                arg_type: str = functions_def_obj[
+                    int(function_number)].parameters[arg].type
+                if arg_type in ("number", "decimal", "float", "num", "n"):
+                    if not isinstance(cd_dict["parameters"][arg], float):
+                        cd_dict["parameters"][arg] = float(
+                            cd_dict["parameters"][arg])
+        except:
+            # If the model failed to generate a valid JSON object,
+            pass
         print(cd_dict)
-
         return cd_dict
     except Exception:
         sys.stderr.write("\033[91m")

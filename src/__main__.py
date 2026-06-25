@@ -8,12 +8,13 @@ from src.decoding import constrain_decoding
 import json
 import os
 from llm_sdk import Small_LLM_Model
+import time
 
 
 def pipline_process() -> None:
     """ Main Pipline Process """
     try:
-
+        start_time = time.time()
         model: Small_LLM_Model = Small_LLM_Model()
         print("start counting\n")
 
@@ -37,7 +38,8 @@ def pipline_process() -> None:
         with open("data/output/function_calls.json", "w") as f:
             json.dump(cd_results, f, indent=4)
 
-        print("End counting\n")
+        end_time = time.time()
+        print(f"End counting in {end_time - start_time} seconds\n")
 
     except Exception:
         sys.stderr.write("\033[91m")
