@@ -37,7 +37,8 @@ def pipline_process(
 
         for input_prompt_index, llm_prompt in enumerate(final_llm_prompts):
             cd_results.append(constrain_decoding(
-                model, llm_prompt, input_prompts[input_prompt_index]))
+                model, llm_prompt, input_prompts[input_prompt_index],
+                functions_def_path))
 
         os.makedirs("data/output", exist_ok=True)
         with open(output_path, "w") as f:
@@ -53,32 +54,28 @@ def pipline_process(
 
 
 if __name__ == "__main__":
-    import argparse
+    # import argparse
 
-    parser = argparse.ArgumentParser()
+    # parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--functions_definition",
-        default="data/input/functions_definition.json",
-        help="Path to the functions definition JSON file."
-    )
+    # parser.add_argument(
+    #     "--functions_definition",
+    #     default="data/input/functions_definition.json",
+    #     help="Path to the functions definition JSON file."
+    # )
 
-    parser.add_argument(
-        "--input",
-        default="data/input/function_calling_tests.json",
-        help="Path to the input prompts JSON file."
-    )
+    # parser.add_argument(
+    #     "--input",
+    #     default="data/input/function_calling_tests.json",
+    #     help="Path to the input prompts JSON file."
+    # )
 
-    parser.add_argument(
-        "--output",
-        default="data/output/function_calls.json",
-        help="Path to the output JSON file."
-    )
+    # parser.add_argument(
+    #     "--output",
+    #     default="data/output/function_calls.json",
+    #     help="Path to the output JSON file."
+    # )
 
-    args = parser.parse_args()
+    # args = parser.parse_args()
 
-    pipline_process(
-        inpt_prompt_path=args.input,
-        functions_def_path=args.functions_definition,
-        output_path=args.output
-    )
+    pipline_process()

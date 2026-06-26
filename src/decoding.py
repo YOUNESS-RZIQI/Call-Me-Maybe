@@ -17,7 +17,7 @@ def args_decoding(model: Small_LLM_Model, vc: dict, llm_prompt: str,
 
     print(dict_result)
 
-    if ky_type[key_index] in ("number", "decimal", "float", "num", "n"):
+    if ky_type[key_index] in ("number", "decimal", "float", "num"):
         allowed_tokens_ids: Set[int] = {
             vc["0"], vc["1"], vc["2"], vc["3"], vc["4"], vc["5"],
             vc["6"], vc["7"], vc["8"], vc["9"], vc["."], vc[","],
@@ -34,7 +34,7 @@ def args_decoding(model: Small_LLM_Model, vc: dict, llm_prompt: str,
                                         vc["false"], vc["False"], vc["FALSE"],
                                         vc[","]}
 
-    elif ky_type[key_index] in ("string", "s", "str"):
+    elif ky_type[key_index] in ("string", "str"):
         # FIX: We manually add the opening quote for string types.
         # This prevents the LLM from hallucinating numbers (like '1')
         # because it
@@ -43,7 +43,10 @@ def args_decoding(model: Small_LLM_Model, vc: dict, llm_prompt: str,
         llm_prompt += '"'
         allowed_tokens_ids = set(range(len(vc)))
 
-        print(dict_result)
+    else:
+        raise ValueError("Invalid key type")
+
+    print(dict_result)
 
     # '",\n"parameters": { "a": '
 
@@ -61,7 +64,7 @@ def args_decoding(model: Small_LLM_Model, vc: dict, llm_prompt: str,
         # calls
         decoded_token = model.decode([next_token_id])
 
-        if ky_type[key_index] in ("string", "s", "str") and \
+        if ky_type[key_index] in ("string", "str") and \
            '"' in decoded_token and '\\' not in decoded_token:
             # The model finished the string by generating a closing quote.
             # Since this is an intermediate argument, we MUST end with a comma.
@@ -75,8 +78,8 @@ def args_decoding(model: Small_LLM_Model, vc: dict, llm_prompt: str,
             print(dict_result)
             break
 
-        if ky_type[key_index] not in ("string", "s", "str") and \
-           "," in decoded_token:
+        elif ky_type[key_index] not in ("string", "str") and \
+                "," in decoded_token:
             # For numbers/bools, we stop when it generates a comma.
             decoded_token = decoded_token.replace(",", ", ")
             dict_result += decoded_token
@@ -90,9 +93,12 @@ def args_decoding(model: Small_LLM_Model, vc: dict, llm_prompt: str,
     return (llm_prompt, dict_result)
 
 
-def constrain_decoding(model: Small_LLM_Model,
-                       llm_prompt: str, input_prompt: str
-                       ) -> dict:
+def constrain_decoding(
+    model: Small_LLM_Model,
+    llm_prompt: str,
+    input_prompt: str,
+    functions_def_path: str = "data/input/functions_definition.json",
+) -> dict:
     """ Constrained Decoding for JSON """
     try:
 
@@ -123,7 +129,7 @@ def constrain_decoding(model: Small_LLM_Model,
         }
 
         functions_def_obj: List[
-            DefinitionValidator] = Parser.get_input_definitions_objects()
+            DefinitionValidator] = Parser.get_input_definitions_objects(functions_def_path)
 
         functions_def_list: List[str] = []
         for obj in functions_def_obj:
@@ -192,29 +198,32 @@ def constrain_decoding(model: Small_LLM_Model,
         print(dict_result)
 
         if ky_type[last_key_index] in \
-                ("number", "decimal", "float", "num", "n"):
+                ("number", "decimal", "float", "num"):
             allowed_tokens_ids: Set[int] = {
                 vc["0"], vc["1"], vc["2"], vc["3"], vc["4"], vc["5"],
                 vc["6"], vc["7"], vc["8"], vc["9"], vc["."], vc["}"],
                 vc["-"], vc["+"], vc[","]}
 
-        if ky_type[last_key_index] in ("int", "integer"):
+        elif ky_type[last_key_index] in ("int", "integer"):
             allowed_tokens_ids: Set[int] = {
                 vc["0"], vc["1"], vc["2"], vc["3"], vc["4"], vc["5"],
                 vc["6"], vc["7"], vc["8"], vc["9"], vc["}"],
                 vc["-"], vc["+"], vc[","]}
 
-        if ky_type[last_key_index] in ("bool", "boolean"):
+        elif ky_type[last_key_index] in ("bool", "boolean"):
             allowed_tokens_ids: Set[int] = {vc["true"], vc["True"], vc["TRUE"],
                                             vc["false"], vc["False"],
                                             vc["FALSE"],
                                             vc["}"], vc[","]}
 
-        if ky_type[last_key_index] in ("string", "s", "str"):
+        elif ky_type[last_key_index] in ("string", "str"):
             # Manually add the opening quote for string types.
             dict_result += '"'
             llm_prompt += '"'
             allowed_tokens_ids: Set[int] = set(range(len(vc)))
+
+        else:
+            raise ValueError("Invalid key type")
 
         print(dict_result)
 
@@ -229,7 +238,7 @@ def constrain_decoding(model: Small_LLM_Model,
 
             decoded_token = model.decode([next_token_id])
 
-            if ky_type[last_key_index] in ("string", "s", "str") and\
+            if ky_type[last_key_index] in ("string", "str") and\
                '"' in decoded_token and '\\' not in decoded_token:
                 # The model finished the final string. We MUST end with
                 # a closing brace.
@@ -240,7 +249,7 @@ def constrain_decoding(model: Small_LLM_Model,
                 llm_prompt += token_to_add
                 break
 
-            if ky_type[last_key_index] not in ("string", "s", "str"):
+            if ky_type[last_key_index] not in ("string", "str"):
                 if "}" in decoded_token:
                     dict_result += decoded_token
                     llm_prompt += decoded_token
@@ -274,7 +283,7 @@ def constrain_decoding(model: Small_LLM_Model,
             for arg in cd_dict["parameters"]:
                 arg_type: str = functions_def_obj[
                     int(function_number)].parameters[arg].type
-                if arg_type in ("number", "decimal", "float", "num", "n"):
+                if arg_type in ("number", "decimal", "float", "num"):
                     if not isinstance(cd_dict["parameters"][arg], float):
                         cd_dict["parameters"][arg] = float(
                             cd_dict["parameters"][arg])
