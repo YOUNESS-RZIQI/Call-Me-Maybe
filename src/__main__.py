@@ -39,7 +39,7 @@ def pipline_process() -> None:
             json.dump(cd_results, f, indent=4)
 
         end_time = time.time()
-        print(f"End counting in {end_time - start_time} seconds\n")
+        print(f"End counting in {(end_time - start_time) / 60} minutes\n")
 
     except Exception:
         sys.stderr.write("\033[91m")
@@ -49,31 +49,3 @@ def pipline_process() -> None:
 
 if __name__ == "__main__":
     pipline_process()
-
-
-        # output_data = []
-        # for i, s in enumerate(cd_strs):
-        #     try:
-        #         parsed = json.loads(s)
-
-        #         # FIX 1: Restore original prompt verbatim (preserves double quotes
-        #         # and other special chars that the LLM may have changed).
-        #         parsed["prompt"] = input_prompts[i]
-
-        #         # FIX 2: Convert parameters of type "number" to float.
-        #         # The LLM generates whole numbers (e.g. 265) but the schema
-        #         # expects floats (e.g. 265.0) for the "number" type.
-        #         func_name = parsed.get("name")
-        #         for func_def in functions_def_obj:
-        #             if func_def.name == func_name:
-        #                 for param_name, param_def in func_def.parameters.items():
-        #                     if param_def.type in ("number", "decimal",
-        #                                           "float", "num", "n"):
-        #                         if param_name in parsed.get("parameters", {}):
-        #                             parsed["parameters"][param_name] = float(
-        #                                 parsed["parameters"][param_name])
-        #                 break
-
-        #         output_data.append(parsed)
-        #     except json.JSONDecodeError as e:
-        #         print("Error: ", e, " | Input: \n", s, "\n")

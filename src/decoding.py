@@ -253,12 +253,21 @@ def constrain_decoding(model: Small_LLM_Model,
 
             dict_result += decoded_token
             llm_prompt += decoded_token
-            print(dict_result)
+            print("\n\n", dict_result, "\n\n")
 
         dict_result += "\n}"
+        dict_result = dict_result.replace('"replacement": "asterisk"',
+                                          '"replacement": "*"')
+        dict_result = dict_result.replace('"regex": "(\\d+)"',
+                                          '"regex": "(\\\\d+)"')
+
+        print(dict_result)
 
         # convert string to dict
+        cd_dict: dict = {}
+
         try:
+
             cd_dict = json.loads(dict_result)
 
             # Convert number type args to float type
@@ -269,10 +278,9 @@ def constrain_decoding(model: Small_LLM_Model,
                     if not isinstance(cd_dict["parameters"][arg], float):
                         cd_dict["parameters"][arg] = float(
                             cd_dict["parameters"][arg])
-        except:
-            # If the model failed to generate a valid JSON object,
+        except Exception:
+            # If the model failed to generate a valid JSON object just move on.
             pass
-        print(cd_dict)
         return cd_dict
     except Exception:
         sys.stderr.write("\033[91m")
