@@ -11,16 +11,21 @@ from llm_sdk import Small_LLM_Model
 import time
 
 
-def pipline_process() -> None:
+def pipline_process(
+        inpt_prompt_path: str = "data/input/function_calling_tests.json",
+        functions_def_path: str = "data/input/functions_definition.json",
+        output_path: str = "data/output/function_calls.json") -> None:
+
     """ Main Pipline Process """
     try:
         start_time = time.time()
         model: Small_LLM_Model = Small_LLM_Model()
         print("start counting\n")
 
-        input_prompts: List[str] = Parser.get_input_prompts_as_list_of_strs()
-        functions_def_obj: List[
-            DefinitionValidator] = Parser.get_input_definitions_objects()
+        input_prompts: List[str] = \
+            Parser.get_input_prompts_as_list_of_strs(inpt_prompt_path)
+        functions_def_obj: List[DefinitionValidator] = \
+            Parser.get_input_definitions_objects(functions_def_path)
 
         final_llm_prompts: List[str] = []
         for prompt in input_prompts:
@@ -35,7 +40,7 @@ def pipline_process() -> None:
                 model, llm_prompt, input_prompts[input_prompt_index]))
 
         os.makedirs("data/output", exist_ok=True)
-        with open("data/output/function_calls.json", "w") as f:
+        with open(output_path, "w") as f:
             json.dump(cd_results, f, indent=4)
 
         end_time = time.time()
@@ -48,4 +53,32 @@ def pipline_process() -> None:
 
 
 if __name__ == "__main__":
-    pipline_process()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--functions_definition",
+        default="data/input/functions_definition.json",
+        help="Path to the functions definition JSON file."
+    )
+
+    parser.add_argument(
+        "--input",
+        default="data/input/function_calling_tests.json",
+        help="Path to the input prompts JSON file."
+    )
+
+    parser.add_argument(
+        "--output",
+        default="data/output/function_calls.json",
+        help="Path to the output JSON file."
+    )
+
+    args = parser.parse_args()
+
+    pipline_process(
+        inpt_prompt_path=args.input,
+        functions_def_path=args.functions_definition,
+        output_path=args.output
+    )

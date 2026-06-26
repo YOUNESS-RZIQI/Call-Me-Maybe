@@ -6,7 +6,7 @@ from src.models import PromptValidator, DefinitionValidator
 class Parser:
     """ Parsing Tools """
     @staticmethod
-    def get_input_prompts_as_list_of_strs(path: str = "data/input/function_calling_tests.json") -> List[str]:
+    def get_input_prompts_as_list_of_strs(path: str) -> List[str]:
         """ Convert Prompts file to List Strings """
         try:
             with open(path, "r") as file:
@@ -17,10 +17,12 @@ class Parser:
                     prompts_list.append(validated_prompt.prompt)
                 return prompts_list
         except Exception:
-            raise ValueError("Error in file: src/parser.py, in get_input_prompts_as_list_of_strs method.") from None
+            raise ValueError("Error in file: src/parser.py, in "
+                             "get_input_prompts_as_list_of_strs method."
+                             ) from None
 
     @staticmethod
-    def get_input_definitions_objects(path: str = "data/input/functions_definition.json") -> List[DefinitionValidator]:
+    def get_input_definitions_objects(path: str) -> List[DefinitionValidator]:
         """ Convert Definitions file to Definitions Objects List """
         try:
             with open(path, "r") as file:
@@ -31,4 +33,6 @@ class Parser:
                     definitions_list.append(validated_deffinition)
                 return definitions_list
         except Exception:
-            raise ValueError("Error in file: src/parser.py, in get_input_definitions_objects method.") from None
+            raise ValueError(
+                "Error in file: src/parser.py, "
+                "in get_input_definitions_objects method.") from None
