@@ -11,28 +11,45 @@ from llm_sdk import Small_LLM_Model
 def args_decoding(model: Small_LLM_Model, vc: dict, llm_prompt: str,
                   dict_result: str, key_index: int,
                   keys: List[str], ky_type: List[str]) -> tuple:
+    """
+    Decodes the arguments for a function token by token with constraints.
+
+    Args:
+        model (Small_LLM_Model): The LLM model wrapper.
+        vc (dict): The vocabulary dictionary mapping tokens to IDs.
+        llm_prompt (str): The current prompt for the LLM.
+        dict_result (str): The current JSON string being built.
+        key_index (int): The index of the current key being generated.
+        keys (List[str]): List of argument names.
+        ky_type (List[str]): List of argument types.
+
+    Returns:
+        tuple: Updated (llm_prompt, dict_result) after generating the argument.
+    """
 
     dict_result += '"' + keys[key_index] + '": '
     llm_prompt += '"' + keys[key_index] + '": '
 
     print(dict_result)
 
+    allowed_tokens_ids: Set[int] = set()
     if ky_type[key_index] in ("number", "decimal", "float", "num"):
-        allowed_tokens_ids: Set[int] = {
+        allowed_tokens_ids = {
             vc["0"], vc["1"], vc["2"], vc["3"], vc["4"], vc["5"],
             vc["6"], vc["7"], vc["8"], vc["9"], vc["."], vc[","],
             vc["-"], vc["+"]}
 
     elif ky_type[key_index] in ("int", "integer"):
-        allowed_tokens_ids: Set[int] = {
+        allowed_tokens_ids = {
             vc["0"], vc["1"], vc["2"], vc["3"], vc["4"], vc["5"],
             vc["6"], vc["7"], vc["8"], vc["9"], vc[","],
             vc["-"], vc["+"]}
 
     elif ky_type[key_index] in ("bool", "boolean"):
-        allowed_tokens_ids: Set[int] = {vc["true"], vc["True"], vc["TRUE"],
-                                        vc["false"], vc["False"], vc["FALSE"],
-                                        vc[","]}
+        allowed_tokens_ids = {
+            vc["true"], vc["True"], vc["TRUE"],
+            vc["false"], vc["False"], vc["FALSE"],
+            vc[","]}
 
     elif ky_type[key_index] in ("string", "str"):
         # FIX: We manually add the opening quote for string types.
@@ -99,7 +116,22 @@ def constrain_decoding(
     input_prompt: str,
     functions_def_path: str = "data/input/functions_definition.json",
 ) -> dict:
-    """ Constrained Decoding for JSON """
+    """
+    Constrained Decoding for JSON
+
+    Forces the language model to generate valid JSON output that adheres to
+    the provided function schemas by masking logits for invalid tokens.
+
+    Args:
+        model (Small_LLM_Model): The LLM model wrapper.
+        llm_prompt (str): The structured prompt instructing the model.
+        input_prompt (str): The original natural language prompt.
+        functions_def_path (str, optional): Path to function definitions
+            JSON. Defaults to "data/input/functions_definition.json".
+
+    Returns:
+        dict: A dictionary containing the generated structured function call.
+    """
     try:
 
         # Use json.dumps to properly escape the prompt string.
@@ -128,8 +160,8 @@ def constrain_decoding(
             vc["-"], vc["+"]
         }
 
-        functions_def_obj: List[
-            DefinitionValidator] = Parser.get_input_definitions_objects(functions_def_path)
+        functions_def_obj: List[DefinitionValidator] = \
+            Parser.get_input_definitions_objects(functions_def_path)
 
         functions_def_list: List[str] = []
         for obj in functions_def_obj:
@@ -150,7 +182,7 @@ def constrain_decoding(
             next_token_id = int(np.argmax(logits))
             if not (model.decode([next_token_id]).isdigit()):
                 break
-            function_number += model.decode(next_token_id)
+            function_number += model.decode([next_token_id])
 
             if len(function_number) >= max_digits:
                 break
@@ -163,11 +195,13 @@ def constrain_decoding(
 
         print(dict_result)
 
-        chosen_func_obj: DefinitionValidator = None
+        chosen_func_obj: DefinitionValidator | None = None
         for func in functions_def_obj:
             if func.name == functions_def_list[int(function_number)]:
                 chosen_func_obj = func
                 break
+
+        assert chosen_func_obj is not None
 
         keys: List[str] = []
         for key in chosen_func_obj.parameters.keys():
@@ -199,28 +233,29 @@ def constrain_decoding(
 
         if ky_type[last_key_index] in \
                 ("number", "decimal", "float", "num"):
-            allowed_tokens_ids: Set[int] = {
+            allowed_tokens_ids = {
                 vc["0"], vc["1"], vc["2"], vc["3"], vc["4"], vc["5"],
                 vc["6"], vc["7"], vc["8"], vc["9"], vc["."], vc["}"],
                 vc["-"], vc["+"], vc[","]}
 
         elif ky_type[last_key_index] in ("int", "integer"):
-            allowed_tokens_ids: Set[int] = {
+            allowed_tokens_ids = {
                 vc["0"], vc["1"], vc["2"], vc["3"], vc["4"], vc["5"],
                 vc["6"], vc["7"], vc["8"], vc["9"], vc["}"],
                 vc["-"], vc["+"], vc[","]}
 
         elif ky_type[last_key_index] in ("bool", "boolean"):
-            allowed_tokens_ids: Set[int] = {vc["true"], vc["True"], vc["TRUE"],
-                                            vc["false"], vc["False"],
-                                            vc["FALSE"],
-                                            vc["}"], vc[","]}
+            allowed_tokens_ids = {
+                vc["true"], vc["True"], vc["TRUE"],
+                vc["false"], vc["False"],
+                vc["FALSE"],
+                vc["}"], vc[","]}
 
         elif ky_type[last_key_index] in ("string", "str"):
             # Manually add the opening quote for string types.
             dict_result += '"'
             llm_prompt += '"'
-            allowed_tokens_ids: Set[int] = set(range(len(vc)))
+            allowed_tokens_ids = set(range(len(vc)))
 
         else:
             raise ValueError("Invalid key type")
@@ -228,8 +263,9 @@ def constrain_decoding(
         print(dict_result)
 
         while (1):
-            logits: List[float] = model.get_logits_from_input_ids(
-                model.encode(llm_prompt)[0].tolist())
+            logits = model.get_logits_from_input_ids(
+                model.encode(llm_prompt)[0].tolist()
+            )
             for index in range(0, len(logits)):
                 if index not in allowed_tokens_ids:
                     logits[index] = float("-inf")
@@ -243,7 +279,7 @@ def constrain_decoding(
                 # The model finished the final string. We MUST end with
                 # a closing brace.
                 token_to_add = decoded_token.replace(",", "")
-                if "}" not in token_to_add:
+                if not token_to_add.rstrip().endswith("}"):
                     token_to_add += "}"
                 dict_result += token_to_add
                 llm_prompt += token_to_add
@@ -287,7 +323,14 @@ def constrain_decoding(
                     if not isinstance(cd_dict["parameters"][arg], float):
                         cd_dict["parameters"][arg] = float(
                             cd_dict["parameters"][arg])
-        except Exception:
+                elif arg_type in ("string", "str"):
+                    if isinstance(cd_dict["parameters"][arg], str):
+                        cd_dict["parameters"][arg] = cd_dict[
+                                                          "parameters"][
+                            arg].strip()
+        except Exception as e:
+            print(f"JSON LOADS FAILED: {e}")
+            print(f"DICT RESULT WAS:\n{dict_result}")
             # If the model failed to generate a valid JSON object just move on.
             pass
         return cd_dict
@@ -295,3 +338,4 @@ def constrain_decoding(
         sys.stderr.write("\033[91m")
         traceback.print_exc()
         sys.stdout.write("\033[0m")
+        return cd_dict

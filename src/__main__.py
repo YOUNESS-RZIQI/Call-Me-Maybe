@@ -40,7 +40,9 @@ def pipline_process(
                 model, llm_prompt, input_prompts[input_prompt_index],
                 functions_def_path))
 
-        os.makedirs("data/output", exist_ok=True)
+        output_dir = os.path.dirname(output_path)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
         with open(output_path, "w") as f:
             json.dump(cd_results, f, indent=4)
 
@@ -54,28 +56,32 @@ def pipline_process(
 
 
 if __name__ == "__main__":
-    # import argparse
+    import argparse
 
-    # parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
 
-    # parser.add_argument(
-    #     "--functions_definition",
-    #     default="data/input/functions_definition.json",
-    #     help="Path to the functions definition JSON file."
-    # )
+    parser.add_argument(
+        "--functions_definition",
+        default="data/input/functions_definition.json",
+        help="Path to the functions definition JSON file."
+    )
 
-    # parser.add_argument(
-    #     "--input",
-    #     default="data/input/function_calling_tests.json",
-    #     help="Path to the input prompts JSON file."
-    # )
+    parser.add_argument(
+        "--input",
+        default="data/input/function_calling_tests.json",
+        help="Path to the input prompts JSON file."
+    )
 
-    # parser.add_argument(
-    #     "--output",
-    #     default="data/output/function_calls.json",
-    #     help="Path to the output JSON file."
-    # )
+    parser.add_argument(
+        "--output",
+        default="data/output/function_calls.json",
+        help="Path to the output JSON file."
+    )
 
-    # args = parser.parse_args()
+    args = parser.parse_args()
 
-    pipline_process()
+    pipline_process(
+        inpt_prompt_path=args.input,
+        functions_def_path=args.functions_definition,
+        output_path=args.output,
+    )

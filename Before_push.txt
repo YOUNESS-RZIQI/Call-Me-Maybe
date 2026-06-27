@@ -31,3 +31,9 @@
     
     8-6) (Optional) • lint-strict (optional): Execute the commands flake8 . and mypy . --strict
 
+
+Questions ? :
+
+1) wat is : UV_CACHE_DIR , HF_HOME , pip vs uv, uv ?
+
+2) 
