@@ -9,10 +9,10 @@ class PromptBuilder:
         prompt: str, definitions_list: List[DefinitionValidator]
     ) -> str:
         """ Build Final Prompt String """
-        final_string = ""
-        i = 0
+        final_string: str = ""
+        i: int = 0
         for function in definitions_list:
-            params = ', '.join(
+            params: str = ', '.join(
                 f'{key}: {value.type}'
                 for key, value in function.parameters.items()
             )

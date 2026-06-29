@@ -10,7 +10,6 @@ The primary goal is to ensure that the AI model produces 100% syntactically corr
 ## Instructions
 ### Prerequisites
 - Python 3.10+
-- `uv` package manager installed
 
 ### Installation & Execution
 You can use the provided `Makefile` to install dependencies and run the project:
@@ -49,7 +48,7 @@ The solution uses **Constrained Decoding** to guarantee that the Large Language 
 - **Reliability**: The system is highly robust because it treats token generation as a finite state machine; it will not let the model generate invalid commas, misplaced quotes, or incorrect types.
 
 ## Challenges Faced
-- **Token Redefinitions (Flake8/Mypy)**: Overlapping type annotations inside constrained blocks led to mypy redefinition errors. This was solved by declaring the `Set[int]` type initially and rebinding standard dictionary updates later in the flow.
+- **Token Redefinitions (Flake8/Mypy)**: Overlapping type annotations inside constrained blocks led to mypy redefinition errors.
 - **Escaping Quotes in Prompts**: User prompts containing double quotes (e.g. `"Hello"`) would break the outer JSON structure being generated. By using `json.dumps()` for the prompt input, strings were properly escaped before passing to the state builder.
 - **Infinite Generation Loops**: The SLM could occasionally enter an infinite loop when generating integers (like appending numbers indefinitely). To solve this, a hard cap on digits was placed based on the function list size, forcefully halting generation.
 
@@ -59,9 +58,10 @@ The solution uses **Constrained Decoding** to guarantee that the Large Language 
 - Leveraged `flake8` and `mypy` statically to find resource leaks, unused imports, or bad typing before runtime.
 
 ## Resources
+- [Youtube Video: What is LLM, and how it works ?)](https://youtu.be/wjZofJX0v4M?si=tPJXx6BYR-sy5o1y)
 - [Qwen 0.6B Model Documentation](https://huggingface.co/Qwen)
 - JSON state machine tracking principles
-- AI utilized throughout learning: Discussed structural constraints of LLM decoders and utilized LLMs to suggest edge-case testing methodologies during development.
+- AI utilized throughout learning: Discussed structural constraints of LLM decoders and utilized how to use the LLM.
 
 ## Example Usage
 **Input Prompt**: `"Reverse the string 'hello'"`

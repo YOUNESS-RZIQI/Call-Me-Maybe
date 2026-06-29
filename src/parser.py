@@ -1,38 +1,45 @@
 from typing import List
 import json
 from src.models import PromptValidator, DefinitionValidator
+import traceback
+import sys
 
 
 class Parser:
-    """ Parsing Tools """
+    """Utility methods for parsing project input files."""
     @staticmethod
     def get_input_prompts_as_list_of_strs(path: str) -> List[str]:
-        """ Convert Prompts file to List Strings """
+        """Parse the prompts JSON file into a list of prompt strings."""
         try:
             with open(path, "r") as file:
-                data = json.load(file)
-                prompts_list = []
+                data: List[dict] = json.load(file)
+                prompts_list: List[str] = []
                 for item in data:
-                    validated_prompt = PromptValidator(**item)
+                    validated_prompt: PromptValidator = PromptValidator(**item)
                     prompts_list.append(validated_prompt.prompt)
                 return prompts_list
         except Exception:
-            raise ValueError("Error in file: src/parser.py, in "
-                             "get_input_prompts_as_list_of_strs method."
-                             ) from None
+            sys.stderr.write("\033[91m")
+            traceback.print_exc()
+            print("\n\n")
+            sys.stdout.write("\033[0m")
+            return []
 
     @staticmethod
     def get_input_definitions_objects(path: str) -> List[DefinitionValidator]:
-        """ Convert Definitions file to Definitions Objects List """
+        """Parse the function definitions JSON file into validated objects."""
         try:
             with open(path, "r") as file:
-                data = json.load(file)
-                definitions_list = []
+                data: List[dict] = json.load(file)
+                definitions_list: List[DefinitionValidator] = []
                 for item in data:
-                    validated_deffinition = DefinitionValidator(**item)
-                    definitions_list.append(validated_deffinition)
+                    validated_definition: DefinitionValidator = \
+                        DefinitionValidator(**item)
+                    definitions_list.append(validated_definition)
                 return definitions_list
         except Exception:
-            raise ValueError(
-                "Error in file: src/parser.py, "
-                "in get_input_definitions_objects method.") from None
+            sys.stderr.write("\033[91m")
+            traceback.print_exc()
+            print("\n\n")
+            sys.stdout.write("\033[0m")
+            return []

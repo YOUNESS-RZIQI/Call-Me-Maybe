@@ -4,10 +4,10 @@ import traceback
 import sys
 from typing import List
 from src.models import DefinitionValidator
-from src.decoding import constrain_decoding
+from src.decoding import function_calling
 import json
-from llm_sdk import Small_LLM_Model
 import time
+import os
 
 
 def pipline_process(
@@ -17,9 +17,6 @@ def pipline_process(
 
     """ Main Pipline Process """
     try:
-        start_time = time.time()
-        model: Small_LLM_Model = Small_LLM_Model()
-        print("start counting\n")
 
         input_prompts: List[str] = \
             Parser.get_input_prompts_as_list_of_strs(inpt_prompt_path)
@@ -34,21 +31,32 @@ def pipline_process(
 
         cd_results: List[dict] = []
 
+        from llm_sdk import Small_LLM_Model
+        model: Small_LLM_Model = Small_LLM_Model()
+
+        start_time: float = time.time()
+        print("start counting\n")
+
         for input_prompt_index, llm_prompt in enumerate(final_llm_prompts):
-            cd_results.append(constrain_decoding(
+            cd_results.append(function_calling(
                 model, llm_prompt, input_prompts[input_prompt_index],
                 functions_def_path))
 
-        with open(output_path, "w") as f:
+        output_dir: str = os.path.dirname(output_path)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(cd_results, f, indent=4)
 
-        end_time = time.time()
+        end_time: float = time.time()
         print(f"End counting in {(end_time - start_time) / 60} minutes\n")
 
     except Exception:
         sys.stderr.write("\033[91m")
         traceback.print_exc()
         sys.stdout.write("\033[0m")
+        print("\n\n")
 
 
 if __name__ == "__main__":
@@ -58,20 +66,17 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--functions_definition",
-        default="data/input/functions_definition.json",
-        help="Path to the functions definition JSON file."
+        default="./data/input/functions_definition.json"
     )
 
     parser.add_argument(
         "--input",
-        default="data/input/function_calling_tests.json",
-        help="Path to the input prompts JSON file."
+        default="./data/input/function_calling_tests.json"
     )
 
     parser.add_argument(
         "--output",
-        default="data/output/function_calls.json",
-        help="Path to the output JSON file."
+        default="./data/output/function_calls.json"
     )
 
     args = parser.parse_args()
